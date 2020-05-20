@@ -1,12 +1,14 @@
 import argparse
 import os
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets
-from torch.autograd import Variable
 from matplotlib import pyplot as plt
 import numpy as np
+
+from model import VGGCustom
 
 
 # Training settings
@@ -45,16 +47,13 @@ train_loader = torch.utils.data.DataLoader(
     datasets.ImageFolder(args.data + '/train_images',
                          transform=data_transforms),
     batch_size=args.batch_size, shuffle=True, num_workers=1)
+
 val_loader = torch.utils.data.DataLoader(
     datasets.ImageFolder(args.data + '/val_images',
                          transform=data_transforms),
     batch_size=args.batch_size, shuffle=False, num_workers=1)
 
-# Neural network and optimizer
-# We define neural net in model.py so that it can be reused by the evaluate.py script
-from model import VGG_custom
-
-model = VGG_custom()
+model = VGGCustom()
 
 if use_cuda:
     print('Using GPU')
@@ -70,7 +69,8 @@ if args.optimizer == 'SGD':
 elif args.optimizer == 'Adam':
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-def train(epoch,container_result):
+
+def train(epoch, container_result):
     model.train()
     correct = 0
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -80,7 +80,7 @@ def train(epoch,container_result):
         optimizer.zero_grad()
         output = model(data)
 
-        criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean')
+        criterion = torch.nn.CrossEntropyLoss(reduction='mean')
 
         loss = criterion(output, target)
         loss.backward()
@@ -97,6 +97,7 @@ def train(epoch,container_result):
     container_result.append(100 - 100.*correct / len(train_loader.dataset))
 
     print('Train Epoch : {} The accuracy on the training set is {:0.0f}%'.format(epoch,100.*correct / len(train_loader.dataset)))
+
 
 def validation(container_result):
     
